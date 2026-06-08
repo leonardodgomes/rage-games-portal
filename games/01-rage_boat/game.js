@@ -11,6 +11,12 @@ const arquivos = {
     kraken: "assets/kraken.png"
 };
 
+
+// ADICIONA ESTAS DUAS LINHAS AQUI NO INÍCIO:
+ctx.imageSmoothingEnabled = false;
+ctx.mozImageSmoothingEnabled = false;
+
+
 // Carrega todas as imagens dinamicamente
 let imagensCarregadas = 0;
 let totalImagens = Object.keys(arquivos).length;

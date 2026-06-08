@@ -1,59 +1,25 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// --- CARREGAR IMAGENS ---
+// --- IMAGENS ---
 const imagemBarco = new Image();
 imagemBarco.src = "assets/barco.png";
 
-// --- ESTADO DO JOGO ---
+// --- GESTÃO DE ESTADO ---
 let contadorMortes = 0;
+let nivelAtual = 1;
+let cenario = dadosNivel1; // Começa com o Nível 1
 
-// Configurações do Barco
 const barco = {
-    x: 50,
-    y: 300,
-    largura: 40,
-    altura: 30,
-    vX: 0,
-    vY: 0,
-    aceleracao: 0.2,
-    atrito: 0.95,
-    angulo: 0
+    x: 50, y: 300, largura: 40, altura: 30,
+    vX: 0, vY: 0, aceleracao: 0.2, atrito: 0.95, angulo: 0
 };
 
-// --- OBSTÁCULOS E ARMADILHAS ---
-// As armadilhas têm "visivel: false" e só aparecem quando o barco toca no gatilho (trigger)
-const obstaculos = [
-    // Rochas Normais (Sempre visíveis)
-    { x: 300, y: 100, largura: 80, altura: 80, cor: "#555", visivel: true, armadilha: false },
-    { x: 300, y: 420, largura: 80, altura: 80, cor: "#555", visivel: true, armadilha: false },
-    
-    // A ILHA ARMADILHA (Começa invisível)
-    { x: 450, y: 200, largura: 120, height: 200, largura: 120, altura: 200, cor: "#d2b48c", visivel: false, armadilha: true }
-];
-
-// O Gatilho Invisível (Zona que o barco pisa para ativar a armadilha)
-const gatilhoArmadilha = {
-    x: 380,
-    y: 200,
-    largura: 50,
-    altura: 200,
-    ativado: false
-};
-
-// Meta / Objetivo (Chegar ao fim do ecrã do lado direito)
-const meta = {
-    x: 750,
-    y: 0,
-    largura: 50,
-    altura: 600
-};
-
+const meta = { x: 760, y: 0, largura: 40, altura: 600 };
 const teclas = {};
 window.addEventListener("keydown", (e) => teclas[e.key] = true);
 window.addEventListener("keyup", (e) => teclas[e.key] = false);
 
-// Função auxiliar para detetar colisão entre dois retângulos
 function verificarColisao(rect1, rect2) {
     return rect1.x < rect2.x + rect2.largura &&
            rect1.x + rect1.largura > rect2.x &&
@@ -61,100 +27,135 @@ function verificarColisao(rect1, rect2) {
            rect1.y + rect1.altura > rect2.y;
 }
 
-function reiniciarJogo() {
+function reiniciarNivel() {
+    barco.x = 50; barco.y = 300; barco.vX = 0; barco.vY = 0; barco.angulo = 0;
+    
+    // Resetar armadilhas específicas do nível ativo
+    if (nivelAtual === 1) {
+        dadosNivel1.gatilho.ativado = false;
+        dadosNivel1.obstaculos.find(o => o.eArmadilha).visivel = false;
+    } else if (nivelAtual === 2) {
+        dadosNivel2.gatilho.ativado = false;
+        const kraken = dadosNivel2.obstaculos.find(o => o.eKraken);
+        kraken.visivel = false;
+        kraken.x = 500; kraken.y = -100; // Reseta posição do Kraken
+    }
+}
+
+function morrer() {
     contadorMortes++;
-    barco.x = 50;
-    barco.y = 300;
-    barco.vX = 0;
-    barco.vY = 0;
-    barco.angulo = 0;
-    // Resetar a armadilha para o jogador cair nela outra vez!
-    obstaculos[2].visivel = false;
-    gatilhoArmadilha.ativado = false;
+    reiniciarNivel();
+}
+
+function passarNivel() {
+    nivelAtual++;
+    if (nivelAtual === 2) {
+        cenario = dadosNivel2;
+        reiniciarNivel();
+    } else {
+        alert(`🏆 Parabéns! Completaste todos os níveis!\nMortes Totais: ${contadorMortes}`);
+        nivelAtual = 1;
+        cenario = dadosNivel1;
+        contadorMortes = 0;
+        reiniciarNivel();
+    }
 }
 
 function atualizar() {
-    // Movimento
+    // Controlo e Física do Barco
     if (teclas["ArrowUp"] || teclas["w"]) barco.vY -= barco.aceleracao;
     if (teclas["ArrowDown"] || teclas["s"]) barco.vY += barco.aceleracao;
     if (teclas["ArrowLeft"] || teclas["a"]) barco.vX -= barco.aceleracao;
     if (teclas["ArrowRight"] || teclas["d"]) barco.vX += barco.aceleracao;
 
-    barco.vX *= barco.atrito;
-    barco.vY *= barco.atrito;
-    barco.x += barco.vX;
-    barco.y += barco.vY;
+    barco.vX *= barco.atrito; barco.vY *= barco.atrito;
+    barco.x += barco.vX; barco.y += barco.vY;
 
     if (Math.abs(barco.vX) > 0.1 || Math.abs(barco.vY) > 0.1) {
         barco.angulo = Math.atan2(barco.vY, barco.vX);
     }
 
-    // Limites do ecrã
+    // Limites da tela
     if (barco.x < 0) barco.x = 0;
     if (barco.x > canvas.width - barco.largura) barco.x = canvas.width - barco.largura;
     if (barco.y < 0) barco.y = 0;
     if (barco.y > canvas.height - barco.altura) barco.y = canvas.height - barco.altura;
 
-    // --- LÓGICA DA ARMADILHA (O GATILHO) ---
-    if (!gatilhoArmadilha.ativado && verificarColisao(barco, gatilhoArmadilha)) {
-        gatilhoArmadilha.ativado = true;
-        obstaculos[2].visivel = true; // A ilha surge do nada bem na frente do barco!
+    // --- LÓGICA DO NÍVEL 1 (Ilha Surpresa) ---
+    if (nivelAtual === 1) {
+        if (!cenario.gatilho.ativado && verificarColisao(barco, cenario.gatilho)) {
+            cenario.gatilho.ativado = true;
+            cenario.obstaculos.find(o => o.eArmadilha).visivel = true;
+        }
     }
 
-    // --- VERIFICAR COLISÕES COM OBSTÁCULOS ---
-    obstaculos.forEach(obs => {
+    // --- LÓGICA DO NÍVEL 2 (Movimento do Kraken) ---
+    if (nivelAtual === 2) {
+        const kraken = cenario.obstaculos.find(o => o.eKraken);
+        if (!cenario.gatilho.ativado && verificarColisao(barco, cenario.gatilho)) {
+            cenario.gatilho.ativado = true;
+            kraken.visivel = true;
+        }
+        // Se o Kraken foi ativado, ele persegue implacavelmente a posição do barco
+        if (kraken.visivel) {
+            const dx = (barco.x + barco.largura/2) - (kraken.x + kraken.largura/2);
+            const dy = (barco.y + barco.altura/2) - (kraken.y + kraken.altura/2);
+            const distancia = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distancia > 0) {
+                kraken.x += (dx / distancia) * kraken.velocidade;
+                kraken.y += (dy / distancia) * kraken.velocidade;
+            }
+        }
+    }
+
+    // --- VERIFICAR COLISÕES ---
+    cenario.obstaculos.forEach(obs => {
         if (obs.visivel && verificarColisao(barco, obs)) {
-            reiniciarJogo();
+            morrer();
         }
     });
 
     // --- VERIFICAR VITÓRIA ---
     if (verificarColisao(barco, meta)) {
-        alert("Incrível! Conseguiste passar... por agora. Mortes: " + contadorMortes);
-        contadorMortes = 0;
-        reiniciarJogo();
+        passarNivel();
     }
 }
 
 function desenhar() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Desenhar a Meta (Linha verde de chegada)
+    // Linha de Chegada
     ctx.fillStyle = "rgba(52, 199, 89, 0.4)";
     ctx.fillRect(meta.x, meta.y, meta.largura, meta.altura);
 
-    // Desenhar Obstáculos e Armadilhas
-    obstaculos.forEach(obs => {
+    // Desenhar Obstáculos do nível ativo
+    cenario.obstaculos.forEach(obs => {
         if (obs.visivel) {
             ctx.fillStyle = obs.cor;
             ctx.fillRect(obs.x, obs.y, obs.largura, obs.altura);
-            
-            // Detalhe estético: borda preta nas rochas
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
             ctx.strokeRect(obs.x, obs.y, obs.largura, obs.altura);
         }
     });
 
-    // Desenhar o Barco
+    // Desenhar o Barco com Rotação
     ctx.save();
     ctx.translate(barco.x + barco.largura / 2, barco.y + barco.altura / 2);
     ctx.rotate(barco.angulo);
     ctx.drawImage(imagemBarco, -barco.largura / 2, -barco.altura / 2, barco.largura, barco.altura);
     ctx.restore();
 
-    // Desenhar a Interface (Contador de Mortes)
+    // Interface Gráfica (HUD)
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 20px Arial";
-    ctx.fillText("MORTES: " + contadorMortes, 20, 40);
+    ctx.font = "bold 16px Arial";
+    ctx.fillText(cenario.nome, 20, 35);
+    ctx.fillText("MORTES: " + contadorMortes, 20, 65);
 }
 
 function loopJogo() {
-    atualizar();
-    desenhar();
+    atualizar(); desenhar();
     requestAnimationFrame(loopJogo);
 }
 
-imagemBarco.onload = () => {
-    loopJogo();
-};
+imagemBarco.onload = () => { loopJogo(); };

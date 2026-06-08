@@ -6,7 +6,7 @@
     <style>
         body {
             margin: 0;
-            background-color: #222;
+            background-color: #111;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,16 +16,20 @@
         }
         canvas {
             border: 4px solid #fff;
-            background-color: #1d70b8; /* Cor azul do mar */
+            background-color: #1d70b8; /* Mar azul */
         }
     </style>
 </head>
 <body>
 
-    <!-- A nossa tela de jogo (800 de largura por 600 de altura) -->
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-    <!-- Ligação ao ficheiro onde vamos programar a lógica -->
+    <!-- 1. Carregar os dados de cada nível -->
+    <script src="niveis/nivel1.js"></script>
+    <script src="niveis/nivel2.js"></script>
+    
+    <!-- 2. Carregar o motor do jogo por último -->
     <script src="game.js"></script>
+
 </body>
 </html>

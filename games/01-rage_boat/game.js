@@ -23,6 +23,37 @@ const barco = {
     angulo: 0
 };
 
+// --- CONTROLO DE INÍCIO COM STORYTELLING ---
+
+let jogoIniciado = false;
+
+// Esta função é chamada quando o jogador clica no botão "Ligar o Motor"
+function iniciarAventura() {
+    // Esconde o ecrã da história com CSS
+    document.getElementById("ecraHistoria").style.display = "none";
+    
+    // Ativa o estado do jogo e arranca o loop
+    jogoIniciado = true;
+    configurarMeta();
+    loopJogo();
+}
+
+// O loop do jogo agora só desenha e atualiza se o jogo tiver sido iniciado
+function loopJogo() {
+    if (jogoIniciado) {
+        atualizar();
+        desenhar();
+        requestAnimationFrame(loopJogo);
+    }
+}
+
+// O carregamento da imagem apenas valida o asset, mas não inicia o loop sozinho
+imagemBarco.onload = () => {
+    console.log("Barco carregado. Pronto para iniciar a história.");
+};
+
+
+
 // Objeto da Meta (Porto) - Será preenchido dinamicamente por cada nível
 let meta = { x: 0, y: 0, largura: 0, altura: 0 };
 

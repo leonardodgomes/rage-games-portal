@@ -1,0 +1,11 @@
+# Sistemas Operativos
+.DS_Store
+Thumbs.db
+
+# Configurações do VS Code ou outros editores
+.vscode/
+.idea/
+
+# Se usares alguma ferramenta que precise de pacotes no futuro
+node_modules/
+dist/

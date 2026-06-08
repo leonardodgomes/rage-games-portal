@@ -5,7 +5,7 @@ const ctx = canvas.getContext("2d");
 const imagens = {};
 const arquivos = {
     barco: "assets/barco.png",
-    mar: "assets/mar_textura.gif",
+    mar: "assets/mar_textura.png",
     rocha: "assets/rocha.png",
     ilha: "assets/ilha.png",
     kraken: "assets/kraken.png"
